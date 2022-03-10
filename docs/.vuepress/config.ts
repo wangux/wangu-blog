@@ -2,7 +2,7 @@ import { defineUserConfig } from 'vuepress'
 import type { DefaultThemeOptions } from 'vuepress'
 
 export default defineUserConfig<DefaultThemeOptions>({
-  base: '/blog/',
+  base: '/',
   // 主题和它的配置
   theme: '@vuepress/theme-default',
   locales: {
