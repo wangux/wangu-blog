@@ -42,6 +42,20 @@ export default defineUserConfig<DefaultThemeOptions>({
         ],
         sidebar: [
           {
+            text: 'html和css',
+            collapsible: true,
+            children: [
+              {
+                text: 'html基础',
+                link: '/html-css/html',
+              },
+              {
+                text: 'css基础',
+                link: '/html-css/css',
+              }
+            ],
+          },
+          {
             text: 'js',
             collapsible: true,
             children: [
