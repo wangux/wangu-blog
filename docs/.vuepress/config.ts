@@ -91,6 +91,7 @@ export default defineUserConfig<DefaultThemeOptions>({
           },
           {
             text: 'vue',
+            collapsible: true,
             children: [
               {
                 text: 'vue基础',
