@@ -93,6 +93,10 @@ export default defineUserConfig<DefaultThemeOptions>({
             text: 'vue',
             children: [
               {
+                text: 'vue基础',
+                link: '/vue/base',
+              },
+              {
                 text: 'vue源码',
                 link: '/vue/source',
               }
@@ -124,6 +128,10 @@ export default defineUserConfig<DefaultThemeOptions>({
             text: 'webpack',
             collapsible: true,
             children: [
+              {
+                text: 'webpack基础',
+                link: '/webpack/webpack基础.md',
+              },
               {
                 text: 'webpack原理',
                 link: '/webpack/webpack原理.md',
