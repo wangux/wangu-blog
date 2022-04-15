@@ -27,17 +27,17 @@ export default defineUserConfig<DefaultThemeOptions>({
             text: '算法',
             children: [
             {
-              text: '手写',
+              text: '手写api',
               link: '/js/write',
             },
             {
-              text: 'leetcode',
-              link: '/js/write',
+              text: '基础算法',
+              link: '/algorithm/base',
             }],
           },
           {
             text: 'github',
-            link: 'https://github.com',
+            link: 'https://github.com/wangux',
           }
         ],
         sidebar: [
@@ -229,6 +229,14 @@ export default defineUserConfig<DefaultThemeOptions>({
               }
             ],
           },
+          {
+            text: '算法',
+            collapsible: true,
+            children: [{
+              text: '基础算法手写',
+              link: '/algorithm/base',
+            }]
+          }
         ],
         selectLanguageName: '简体中文',
         selectLanguageText: 'Languages',
