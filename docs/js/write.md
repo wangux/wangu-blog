@@ -137,3 +137,42 @@ function deepCopy (obj, cache = new WeakMap()) {
     return res;
 }
 ```
+
+异步流程控制
+```js
+//异步并发限制
+function limit (count, promises, cb) {
+    const tasks = []
+    const doingtasks = []
+    let i = 0
+    const func = () => {
+        //使所有微任务加到队列
+        if (i === promises.length) {
+            return Promise.resolve()
+        }
+        const task = Promise.resolve().then(() => {
+            i++
+            return cb(i)
+        })
+        tasks.push(task)
+        const doingtask = task.then(() => { doingtasks.splice(doingtasks.indexOf(doingtask), 1) })
+        doingtasks.push(doingtask)
+        const res = doingtasks.length >= count ? Promise.race(doingtasks) : Promise.resolve()
+        return res.then(func)
+    }
+    return func().then(() => Promise.all(tasks))
+}
+
+const request = (i) => {
+    return new Promise((resolve, reject) => {
+        setTimeout(() => {
+            console.log(i)
+            resolve()
+        }, 1000);
+    })
+}
+
+limit(4, [1,1,1,1,1], request).then(() => {
+    console.log(22)
+})
+```

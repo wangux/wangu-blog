@@ -41,7 +41,7 @@ function newObj (fn) {
       obj.setPrototypeOf(fn.prototype);
   }
   const res = fn.apply(obj, [].slice.call(arguments, 1))
-  if ((typeof res === 'function' && res != null) || typeof res === 'object') {
+  if (typeof res === 'function' || (typeof res === 'object' && res !== null)) {
   		return res;
   }
   return obj;
