@@ -136,6 +136,16 @@ function deepCopy (obj, cache = new WeakMap()) {
 
     return res;
 }
+
+function myinstanceof (obj, kclass) {
+    const proto = obj.__proto__
+    const prototype = kclass.prototype
+    while(true) {
+        if (proto == null) return false
+        if (proto == prototype) return true
+        proto = proto.__proto__ 
+    }
+}
 ```
 
 异步流程控制
@@ -175,4 +185,47 @@ const request = (i) => {
 limit(4, [1,1,1,1,1], request).then(() => {
     console.log(22)
 })
+
+//异步串行/并行加法
+function asyncAdd (a, b, cb) {
+    setTimeout(() => {
+        console.log(1)
+        cb(null, a+b)
+    }, 1000);
+}
+
+function PromiseAdd (a, b) {
+    return new Promise((resolve, reject) => {
+        asyncAdd(a, b, (err, res) => {
+            if (err) {
+                reject(err)
+            } else {
+                resolve(res)
+            }
+        })
+    })
+}
+
+const sequenceAdd = async (...args) => {
+    return args.reduce((task, cur) => {
+        return task.then((value) => {
+            return PromiseAdd(value, cur)
+        })
+    }, Promise.resolve(0))
+}
+
+const parallelAdd = async (...args) => {
+    if (args.length === 1) return args[0]
+    const tasks = []
+    for (let i = 0; i < args.length; i+=2) {
+        tasks.push(PromiseAdd(args[i], args[i+1] || 0))
+    }
+    const res = await Promise.all(tasks)
+    return parallelAdd(...res)
+}
+
+(async () => {
+    const res = await sequenceAdd(1,2,3,4)
+    console.log(res)
+})()
 ```

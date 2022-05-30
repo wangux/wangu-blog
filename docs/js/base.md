@@ -145,7 +145,7 @@ function Promise (executor) {
     self.status = 'pending'
     self.onResolvedCallBacks = []
     self.onRejectedCallBacks = []
-
+    
     function resolve (value) {
         if (value instanceof Promise) {
             return value.then(resolve, reject)
@@ -157,7 +157,7 @@ function Promise (executor) {
                 for (let i = 0; i < self.onResolvedCallBacks.length; i++) {
                     self.onResolvedCallBacks[i](value)
                 }
-            }
+            }   
         });
     }
 
@@ -169,7 +169,7 @@ function Promise (executor) {
                 for (let i = 0; i < self.onRejectedCallBacks.length; i++) {
                     self.onRejectedCallBacks[i](reason)
                 }
-            }
+            }   
         });
     }
 
@@ -178,15 +178,14 @@ function Promise (executor) {
     } catch (error) {
         reject(error)
     }
-
 }
 
 function resolvePromise (promise2, x, resolve, reject) {
     let then
     let thenCalledOrThrow = false
     
-    if (promise2 === x) {
-        return reject(new TypeError('循环报错'))
+    if (x === promise2) {
+        return reject(new TypeError('引用重复类型'))
     }
 
     if (x instanceof Promise) {
@@ -204,10 +203,10 @@ function resolvePromise (promise2, x, resolve, reject) {
         try {
             then = x.then
             if (typeof then === 'function') {
-                then.call(x, function rs (val) {
+                then.call(x, function rs (value) {
                     if (thenCalledOrThrow) return
                     thenCalledOrThrow = true
-                    return resolvePromise(promise2, val, resolve, reject)
+                    return resolvePromise(promise2, value, resolve, reject) 
                 }, function rj (reason) {
                     if (thenCalledOrThrow) return
                     thenCalledOrThrow = true
@@ -224,32 +223,30 @@ function resolvePromise (promise2, x, resolve, reject) {
     } else {
         resolve(x)
     }
-
-    
 }
 
 Promise.prototype.then = function (onResolved, onRejected) {
     const self = this
     let promise2
 
-    onResolved = typeof onResolved === 'function' ? onResolved : function(v) {return v}
-    onRejected = typeof onRejected === 'function' ? onRejected : function(e) {throw e}
-
+    onResolved = typeof onResolved === 'function' ? onResolved : function (value) {return value}
+    onRejected = typeof onRejected === 'function' ? onRejected : function (e) {throw e}
+    
     if (self.status === 'resolved') {
-        return promise2 = new Promise((resolve, reject) => {
+        return promise2 = new Promise(function (resolve, reject) {
             setTimeout(() => {
                 try {
                     const x = onResolved(self.data)
                     resolvePromise(promise2, x, resolve, reject)
                 } catch (error) {
                     reject(error)
-                }
+                }   
             });
         })
     }
 
     if (self.status === 'rejected') {
-        return promise2 = new Promise((resolve, reject) => {
+        return promise2 = new Promise(function (resolve, reject) {
             setTimeout(() => {
                 try {
                     const x = onRejected(self.data)
@@ -262,16 +259,16 @@ Promise.prototype.then = function (onResolved, onRejected) {
     }
 
     if (self.status === 'pending') {
-        return promise2 = new Promise((resolve, reject) => {
-            self.onResolvedCallBacks.push(function (val) {
+        return promise2 = new Promise(function (resolve, reject) {
+            self.onResolvedCallBacks.push(function (value) {
                 try {
-                    const x = onResolved(val)
+                    const x = onResolved(value)
                     resolvePromise(promise2, x, resolve, reject)
                 } catch (error) {
                     reject(error)
                 }
             })
-    
+
             self.onRejectedCallBacks.push(function (reason) {
                 try {
                     const x = onRejected(reason)
@@ -289,46 +286,44 @@ Promise.prototype.catch = function (onRejected) {
 }
 
 Promise.prototype.finally = function (onSettled) {
-    return this.then((res) => {
+    return this.then((value) => {
         onSettled()
-        return res
+        return value
     }, (e) => {
         onSettled()
         throw e
     })
 }
 
-Promise.prototype.any = function (promises) {
+Promise.resolve = function (value) {
     return new Promise((resolve, reject) => {
-        promises = Array.isArray(promises) ? promises : []
-        let len = promises.length
-        // 用于收集所有 reject 
-        let errs = []
-        // 如果传入的是一个空数组，那么就直接返回 AggregateError
-        if(len === 0) return reject(new AggregateError('All promises were rejected'))
-        promises.forEach((promise)=>{
-        promise.then(value=>{
+        if (value instanceof Promise) {
+            value.then((val) => {
+                resolve(val)
+            }, (e) => {
+                reject(e)
+            })
+        } else {
             resolve(value)
-        },err=>{
-            len--
-            errs.push(err)
-            if(len === 0){
-            reject(new AggregateError(errs))
-            }
-        })
-        })
+        }
     })
 }
 
-Promise.prototype.all = function (promises) {
-    const arr = []
-    let index = 0
+Promise.reject = function (reason) {
     return new Promise((resolve, reject) => {
+        reject(reason)
+    })
+}
+
+Promise.all = function (promises) {
+    return new Promise((resolve, reject) => {
+        const arr = []
+        let count = 0
         for (let i = 0; i < promises.length; i++) {
-            promises[i].then(function (res) {
-                arr[i] = res
-                index++
-                if (index === promises.length) {
+            promises[i].then((value) => {
+                arr[i] = value
+                count++
+                if (count === promises.length) {
                     resolve(arr)
                 }
             }, reject)
@@ -336,25 +331,18 @@ Promise.prototype.all = function (promises) {
     })
 }
 
-Promise.prototype.race = function (promises) {
+Promise.allSettled = function (promises) {
     return new Promise((resolve, reject) => {
+        const arr = []
+        let count = 0
         for (let i = 0; i < promises.length; i++) {
-            promises[i].then(resolve, reject)
-        }
-    })
-}
-
-Promise.prototype.allSettled = function (promises) {
-    const arr = []
-    const count = promises.length
-    return new Promise((resolve, reject) => {
-        for (let i = 0; i < promises.length; i++) {
-            promises[i].then(function (res) {
-                arr[i] = { status: 'fulfilled', value: res }
-            }, function (reason) {
+            promises[i].then((value) => {
+                arr[i] = { status: 'fulfilled', value }
+            }, (reason) => {
                 arr[i] = { status: 'rejected', reason }
             }).finally(() => {
-                if (!--count) {
+                count++
+                if (count === promises.length) {
                     resolve(arr)
                 }
             })
@@ -362,15 +350,37 @@ Promise.prototype.allSettled = function (promises) {
     })
 }
 
-Promise.prototype.resolve = function (val) {
+Promise.race = function (promises) {
     return new Promise((resolve, reject) => {
-        resolve(val)
+        for (let i = 0; i < promises.length; i++) {
+            promises[i].then(resolve, reject)
+        }
+    })
+}
+
+Promise.any = function (promises) {
+    return new Promise((resolve, reject) => {
+        promises = Array.isArray(promises) ? promises : []
+        const arr = []
+        let length = promises.length
+        if (length === 0) return reject(new AggregateError('all promises were rejected'))
+        for (let i = 0; i < promises.length; i++) {
+            promises[i].then((value) => {
+                resolve(value)
+            }, (reason) => {
+                if (--length) {
+                    arr[i] = reason
+                } else {
+                    reject(new AggregateError(arr))
+                }
+            })
+        }
     })
 }
 
 Promise.deferred = Promise.defer = function () {
     const dfd = {}
-    dfd.promise = new Promise((resolve, reject) => {
+    dfd.promise = new Promise(function (resolve, reject) {
         dfd.resolve = resolve
         dfd.reject = reject
     })
@@ -446,7 +456,7 @@ arguments.length访问实参个数
 
 数组操作<br />1.增加（都会改变原数组长度）<br />arr.push() //末尾添加元素<br />arr.unshift()  //开头添加元素
 
-2.删除（会改变原数组长度）<br />arr.shift() //从末位删除  返回被删除元素，<br />arr.pop()//从首位删除   返回被删除元素<br />arr.splice(n,u,num)  //n开始位置，u删除个数，num增加元素
+2.删除（会改变原数组长度）<br />arr.shift() //从数组中删除第一个元素  返回被删除元素，<br />arr.pop()//从数组中删除最后一个元素   返回被删除元素<br />arr.splice(n,u,num)  //n开始位置，u删除个数，num增加元素
 
 
 3.截取<br />arr.slice(n,m)  //n开始位置，m结束位置，不包括m（不会改变数组长度）
